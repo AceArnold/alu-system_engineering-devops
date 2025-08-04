@@ -1,24 +1,42 @@
 #!/usr/bin/env bash
-# Installs Nginx with the following configurations:
-#+    Listens on port 80.
-#+    Returns a page containing "Holberton School" when queried
-#+     at the root with a curl GET request.
-# Configures /redirect_me as a "301 Moved Permanently".
-# Includes a custom 404 page containing "Ceci n'est pas une page".
+# Installs Nginx and sets up a custom 404 page with "Ceci n'est pas une page"
 
-sudo apt-get update 
-sudo apt-get install -y nginx 
+sudo apt-get update
+sudo apt-get install -y nginx
 
-echo "Holberton School" | sudo tee /var/www/html/index.html
+# Create root index page
+echo "Holberton School" | sudo tee /var/www/html/index.html > /dev/null
 
-string_for_replacement="server_name _;\n\trewrite ^\/redirect_me https:\/\/www.youtube.com\/watch?v=QH2-TGUlwu4 permanent;"
+# Create custom 404 page
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html > /dev/null
 
-sudo sed -i "s/server_name _;/$string_for_replacement/" /etc/nginx/sites-available/default
+# Overwrite Nginx default config to include 404 setup
+sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
-echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html
+    root /var/www/html;
+    index index.html index.htm;
 
-string_for_replacement="listen 80 default_server;\n\terror_page 404 \/404.html;\n\tlocation = \/404.html {\n\t\troot \/var\/www\/html;\n\tinternal;\n\t}"
+    server_name _;
 
-sudo sed -i "s/listen 80 default_server;/$string_for_replacement/" /etc/nginx/sites-available/default
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
 
+    error_page 404 /404.html;
+    location = /404.html {
+        root /var/www/html;
+        # internal; <-- do NOT include this
+    }
+
+    location = /redirect_me {
+        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
+    }
+}
+EOF
+
+# Restart Nginx
 sudo service nginx restart
+
