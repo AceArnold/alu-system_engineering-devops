@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Make Apache server that returns Hello Holberton
+# Setup Apache to return "Hello Holberton"
 
 sudo apt-get update -y
 sudo apt-get install -y apache2
 sudo systemctl start apache2
-echo "Hello Holberton" | sudo tee /var/www/html/index.html
+echo "Hello Holberton" | sudo tee /var/www/html/index.html > /dev/null
 sudo systemctl restart apache2
+
+# Required output
+if pgrep apache2 > /dev/null; then
+  echo "apache2 is running"
+fi
 
